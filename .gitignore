@@ -1,0 +1,30 @@
+# Entornos virtuales
+venv/
+.env
+
+# Archivos compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de configuración del entorno
+.env
+*.env
+
+# Archivos de bases de datos
+*.sqlite3
+
+# Archivos de log
+*.log
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Archivos de configuraciones locales (IDE)
+.vscode/
+.idea/
+
+# Dependencias de Python
+Pipfile
+Pipfile.lock

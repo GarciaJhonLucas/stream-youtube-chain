@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Queue</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #videoQueue {
+            margin-top: 20px;
+        }
+
+        iframe {
+            display: block;
+            width: 560px;
+            height: 315px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>YouTube Video Queue</h1>
+    <div>
+        <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
+        <button onclick="addVideo()">Add Video</button>
+    </div>
+
+    <div id="videoQueue">
+        <h3>Current Queue:</h3>
+        <ul id="queueList"></ul>
+    </div>
+
+    <!-- Player -->
+    <iframe id="videoPlayer" src="" frameborder="0" allowfullscreen></iframe>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        const queueList = document.getElementById('queueList');
+
+        // Función para agregar un video a la cola
+        async function addVideo() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            if (videoUrl) {
+                const response = await fetch('/add_video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: videoUrl })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    updateQueue(data.queue);
+                    document.getElementById('videoUrl').value = '';
+                } else {
+                    alert(data.message);
+                }
+            }
+        }
+
+        // Función para actualizar la lista de la cola en la UI
+        function updateQueue(queue) {
+            queueList.innerHTML = '';
+            queue.forEach((url, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `Video ${index + 1}: ${url}`;
+                queueList.appendChild(listItem);
+            });
+        }
+
+        // Obtener la cola de videos al cargar la página
+        async function getQueue() {
+            const response = await fetch('/get_queue');
+            const queue = await response.json();
+            updateQueue(queue);
+            if (queue.length > 0) {
+                playNextVideo(queue[0]);
+            }
+        }
+
+        // Reproducir el siguiente video de la cola
+        function playNextVideo(videoUrl) {
+            let videoId;
+
+            // Comprobar si la URL es de youtube.com o youtu.be y extraer el video ID
+            if (videoUrl.includes('youtube.com')) {
+                videoId = new URL(videoUrl).searchParams.get('v');
+            } else if (videoUrl.includes('youtu.be')) {
+                videoId = videoUrl.split('youtu.be/')[1];
+            }
+
+            if (videoId) {
+                videoPlayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&showinfo=0`;
+            } else {
+                alert('Invalid YouTube URL');
+            }
+        }
+
+        // Detectar cuando termina el video y reproducir el siguiente
+        videoPlayer.addEventListener('ended', async () => {
+            await fetch('/remove_first_video', { method: 'POST' });
+            getQueue();
+        });
+
+        // Cargar la cola inicial
+        getQueue();
+    </script>
+</body>
+
+</html>
